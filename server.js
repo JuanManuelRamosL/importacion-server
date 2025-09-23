@@ -3,7 +3,7 @@
 
 // api/index.js
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs'); 
 const { Sequelize, DataTypes } = require('sequelize');
 const jwt = require('jsonwebtoken');
 
@@ -129,6 +129,7 @@ app.post('/users', async (req, res) => {
     const { name, email, password } = req.body || {};
     if (!name || !email || !password) return res.status(400).json({ error: 'name, email y password son requeridos' });
     const password_hash = await bcrypt.hash(password, 10);
+
     const user = await User.create({ name, email: String(email).toLowerCase(), password_hash });
     res.status(201).json({ id: user.id, name: user.name, email: user.email });
   } catch (err) {
