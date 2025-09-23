@@ -11,6 +11,18 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(express.json());
 
+const cors = require('cors');
+
+// Abierto para todos los orígenes (sin credenciales)
+app.use(cors({
+  origin: '*',
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Responder preflights explícitamente (por si acaso)
+app.options('*', cors());
+
 // ===== Config inline (NO .env) =====
 const JWT_SECRET  = 'reemplaza-por-una-clave-bien-larga-y-unica-32+chars';
 const JWT_EXPIRES = '7d';
