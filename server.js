@@ -86,17 +86,35 @@ app.set('trust proxy', 1);
 app.use(express.json());
 
 // ---------- Sequelize (PostgreSQL) ----------
-const sequelize = new Sequelize(
+/* const sequelize = new Sequelize(
   'importacion',         // database
-  'postgres',            // user
-  'juanma123',           // password
+  "neondb_owner",//'postgres',            // user
+  "npg_xS3TXWR2cmwi",//'juanma123',           // password
   {
-    host: 'localhost',
+    host: "ep-old-unit-ac862egj-pooler.sa-east-1.aws.neon.tech",//'localhost',
     port: 1111,
     dialect: 'postgres',
     logging: false,
     pool: { max: 10, idle: 30000 },
     dialectOptions: {}   // sin SSL para local
+  }
+); */
+
+const sequelize = new Sequelize(
+  'neondb',                 // <- nombre de la DB (viene en la URL de Neon)
+  'neondb_owner',           // <- usuario
+  'npg_xS3TXWR2cmwi',       // <- password
+  {
+    host: 'ep-old-unit-ac862egj-pooler.sa-east-1.aws.neon.tech', // host *pooler*
+    port: 5432,                 // <- Neon usa 5432
+    dialect: 'postgres',
+    logging: false,
+    pool: { max: 10, idle: 30000 },
+    dialectOptions: {
+      ssl: { require: true }    // <- SSL obligatorio en Neon
+      // Si tu runtime no confía en la CA, agrega:
+      // , rejectUnauthorized: true  // (Neon tiene cert válido; normalmente NO hace falta tocar esto)
+    }
   }
 );
 
@@ -173,6 +191,31 @@ function calcularImportacionCourierSimple(producto, flete) {
     costoFinal,
   };
 }
+
+
+const jwt = require('jsonwebtoken');
+
+// Config inline (cámbialo por algo largo/aleatorio en prod)
+const JWT_SECRET  = 'reemplaza-por-una-clave-bien-larga-y-unica-32+chars';
+const JWT_EXPIRES = '7d';
+
+function signToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+}
+
+function auth(req, res, next) {
+  try {
+    const hdr = req.headers.authorization || '';
+    const token = hdr.startsWith('Bearer ') ? hdr.slice(7) : null;
+    if (!token) return res.status(401).json({ error: 'No autenticado' });
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded; // { id, email, name }
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: 'Token inválido o expirado' });
+  }
+}
+
 
 // ---------- Rutas ----------
 app.post('/users', async (req, res) => {
@@ -256,6 +299,41 @@ app.get('/users/:id/cotizaciones', async (req, res) => {
     res.json({ userId, cotizaciones });
   } catch (e) {
     res.status(500).json({ error: 'Error al consultar cotizaciones' });
+  }
+});
+
+
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) return res.status(400).json({ error: 'email y password requeridos' });
+
+    const user = await User.findOne({ where: { email: String(email).toLowerCase() } });
+    if (!user) return res.status(401).json({ error: 'Credenciales inválidas' });
+
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) return res.status(401).json({ error: 'Credenciales inválidas' });
+
+    const token = signToken({ id: user.id, email: user.email, name: user.name });
+
+    // Opcional: devolver en cookie httpOnly + en body
+    if (res.cookie) {
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        domain: process.env.COOKIE_DOMAIN || undefined, // e.g. "tudominio.com"
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7d
+      });
+    }
+
+    return res.json({
+      success: true,
+      token, // si no quieres enviarlo en body, quítalo cuando uses cookie
+      user: { id: user.id, name: user.name, email: user.email },
+    });
+  } catch (e) {
+    return res.status(500).json({ error: 'Error en login' });
   }
 });
 
