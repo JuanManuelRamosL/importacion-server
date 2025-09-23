@@ -13,15 +13,14 @@ app.use(express.json());
 
 const cors = require('cors');
 
-// Abierto para todos los orígenes (sin credenciales)
 app.use(cors({
   origin: '*',
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type','Authorization']
 }));
 
-// Responder preflights explícitamente (por si acaso)
-app.options('*', cors());
+// en Express 5 usa regex o '/*' en lugar de '*'
+app.options(/.*/, cors());  
 
 // ===== Config inline (NO .env) =====
 const JWT_SECRET  = 'reemplaza-por-una-clave-bien-larga-y-unica-32+chars';
