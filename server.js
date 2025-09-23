@@ -191,27 +191,38 @@ app.post('/calcular-importacion', async (req, res) => {
   } catch (error) { res.status(400).json({ success: false, error: error.message }); }
 });
 
-app.get('/my/cotizaciones', auth, async (req, res) => {
-  await initPromise;
-  const userId = req.user.id;
-  const cotizaciones = await Quote.findAll({
-    where: { user_id: userId },
-    order: [['created_at', 'DESC']],
-    attributes: [
-      'id','producto','flete','seguro','cif',
-      ['derechos_importacion','derechosImportacion'],
-      ['tasa_estadistica','tasaEstadistica'],
-      ['base_iva','baseIVA'],'iva',
-      ['total_impuestos','totalImpuestos'],
-      ['honorarios_courier','honorariosCourier'],
-      ['total_con_courier','totalConCourier'],
-      ['costo_final','costoFinal'],
-      ['created_at','createdAt'],
-    ],
-  });
-  res.json({ userId, cotizaciones });
-});
+app.get('/users/:id/cotizaciones', async (req, res) => {
+  try {
+    await initPromise;
 
+    const userId = Number(req.params.id);
+    if (!Number.isFinite(userId)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+
+    const cotizaciones = await Quote.findAll({
+      where: { user_id: userId },
+      order: [['created_at', 'DESC']],
+      attributes: [
+        'id','producto','flete','seguro','cif',
+        ['derechos_importacion','derechosImportacion'],
+        ['tasa_estadistica','tasaEstadistica'],
+        ['base_iva','baseIVA'],
+        'iva',
+        ['total_impuestos','totalImpuestos'],
+        ['honorarios_courier','honorariosCourier'],
+        ['total_con_courier','totalConCourier'],
+        ['costo_final','costoFinal'],
+        ['created_at','createdAt'],
+      ],
+    });
+
+    res.json({ userId, cotizaciones });
+  } catch (e) {
+    console.error('Error /users/:id/cotizaciones:', e);
+    res.status(500).json({ error: 'Error al consultar cotizaciones' });
+  }
+});
 
 
 if (require.main === module) {
