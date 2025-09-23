@@ -128,13 +128,26 @@ function auth(req, res, next) {
   } catch { return res.status(401).json({ error: 'Token inválido o expirado' }); }
 }
 
+
+const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
+const SHEET_CSV_URL = process.env.SHEET_CSV_URL || 'https://docs.google.com/spreadsheets/d/1SoqoRRihCpr-fOHmfyuC-Yp99bpn3aKYmU1mgeEy9pU/export?format=csv&gid=0';
+
+async function isEmailInSheet(email) {
+  const res = await fetch(SHEET_CSV_URL);
+  const csv = await res.text();
+  const lines = csv.split(/\r?\n/);
+  const needle = String(email).trim().toLowerCase();
+  return lines.some(line => line.split(',')[0].replace(/(^"|"$)/g,'').trim().toLowerCase() === needle);
+}
+
+
 // ===== Rutas =====
 app.get('/health', async (_req, res) => {
   try { await initPromise; res.json({ status: 'OK' }); }
   catch (e) { res.status(500).json({ status: 'DB_ERROR', error: String(e) }); }
 });
 
-app.post('/users', async (req, res) => {
+/* app.post('/users', async (req, res) => {
   try {
     await initPromise;
     const { name, email, password } = req.body || {};
@@ -145,6 +158,37 @@ app.post('/users', async (req, res) => {
     res.status(201).json({ id: user.id, name: user.name, email: user.email });
   } catch (err) {
     if (String(err).includes('unique')) return res.status(409).json({ error: 'El email ya está registrado' });
+    res.status(500).json({ error: 'Error al crear usuario' });
+  }
+});
+ */
+
+app.post('/users', async (req, res) => {
+  try {
+    await initPromise;
+    const { name, email, password } = req.body || {};
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'name, email y password son requeridos' });
+    }
+
+    // ✅ Chequeo en Google Sheets
+    const permitido = await isEmailInSheet(email);
+    if (!permitido) {
+      return res.status(403).json({ error: 'El email no está autorizado (no figura en la lista).' });
+    }
+
+    const password_hash = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name,
+      email: String(email).toLowerCase(),
+      password_hash,
+    });
+    res.status(201).json({ id: user.id, name: user.name, email: user.email });
+  } catch (err) {
+    if (String(err).includes('unique')) {
+      return res.status(409).json({ error: 'El email ya está registrado' });
+    }
+    console.error('Error /users:', err);
     res.status(500).json({ error: 'Error al crear usuario' });
   }
 });
