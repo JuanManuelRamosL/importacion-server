@@ -6,7 +6,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs'); 
 const { Sequelize, DataTypes } = require('sequelize');
 const jwt = require('jsonwebtoken');
-
+const path = require("path");
 const app = express();
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -18,6 +18,11 @@ app.use(cors({
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
 }));
+
+app.use(
+  "/calculadora",
+  express.static(path.join(__dirname, "public"))
+);
 
 // en Express 5 usa regex o '/*' en lugar de '*'
 app.options(/.*/, cors());  
