@@ -32,7 +32,7 @@ const JWT_SECRET  = 'reemplaza-por-una-clave-bien-larga-y-unica-32+chars';
 const JWT_EXPIRES = '7d';
 
 // ========= NEON: usa pooler + SSL =========
-const DB_NAME = 'neondb';
+/* const DB_NAME = 'neondb';
 const DB_USER = 'neondb_owner';
 const DB_PASS = 'npg_xS3TXWR2cmwi';
 const DB_HOST = 'ep-old-unit-ac862egj-pooler.sa-east-1.aws.neon.tech';
@@ -48,6 +48,25 @@ if (!sequelize) {
     logging: false,
     pool: { max: 5, idle: 30000 }, // más chico en serverless
     dialectOptions: { ssl: { require: true } }
+  });
+  global.__sequelize = sequelize;
+} */
+
+  const DB_NAME = 'importdb';
+const DB_USER = 'appuser';
+const DB_PASS = 'Prueba_12345';   // <- la que confirmaste
+const DB_HOST = '127.0.0.1';
+const DB_PORT = 5432;
+
+let sequelize = global.__sequelize;
+if (!sequelize) {
+  sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
+    host: DB_HOST,
+    port: DB_PORT,
+    dialect: 'postgres',
+    logging: false,
+    pool: { max: 10, idle: 30000, acquire: 60000 },
+    dialectOptions: {} // sin SSL en local
   });
   global.__sequelize = sequelize;
 }
