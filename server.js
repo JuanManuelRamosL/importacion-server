@@ -198,7 +198,7 @@ app.post('/users', async (req, res) => {
     // ✅ Chequeo en Google Sheets
     const permitido = await isEmailInSheet(email);
     if (!permitido) {
-      return res.status(403).json({ error: 'El email no está autorizado (no figura en la lista).' });
+      return res.status(403).json({ error: 'El email no está autorizado.' });
     }
 
     const password_hash = await bcrypt.hash(password, 10);

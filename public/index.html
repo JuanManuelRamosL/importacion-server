@@ -31,7 +31,7 @@
 
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: -15px;
             padding: 40px 0;
         }
 
@@ -264,6 +264,23 @@
   filter: brightness(0) invert(1); /* oscurece/fondo negro, logo en claro */
 }
 
+.app-footer {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #ffffff;
+  margin-top: 2rem;
+  padding: 1rem 0;
+  border-top: 1px solid #f5631a;
+}
+
+/* Opcional: fijar el footer al fondo de la ventana */
+.app-footer--fixed {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+}
 
         .grid {
             display: grid;
@@ -338,10 +355,7 @@
 
             return (
                 <div className="container">
-                    <div className="header">
-                        <h1>Costos de Importación</h1>
-                        <p>Calcula los costos de importación de manera rápida y precisa</p>
-                    </div>
+                  
 
                     {!user ? (
                         <AuthForm onLogin={handleLogin} />
@@ -481,6 +495,10 @@
 
             return (
                 <div>
+                      <div className="header">
+                        <h1>Costos de Importación</h1>
+                        <p>Calcula los costos de importación de manera rápida 🚀</p>
+                    </div>
                     <div className="user-info">
                         <h2>Bienvenido, {user.name}</h2>
                         <button className="logout-btn" onClick={onLogout}>
@@ -500,6 +518,10 @@
                     </div>
 
                     {showHistory && <QuoteHistory userId={user.id} />}
+<footer class="app-footer">
+  Recordá que todos los costos son aproximados.
+</footer>
+
                 </div>
             );
         }
@@ -672,9 +694,11 @@
     
     </div>
   </div>
+  
                         </div>
                         
                     )}
+                    
                 </div>
             );
         }
@@ -720,7 +744,7 @@
                 }).format(amount);
             };
 
-            const formatDate = (dateString) => {
+/*             const formatDate = (dateString) => {
                 return new Date(dateString).toLocaleDateString('es-AR', {
                     year: 'numeric',
                     month: 'short',
@@ -728,7 +752,29 @@
                     hour: '2-digit',
                     minute: '2-digit'
                 });
-            };
+            }; */
+
+            const formatDate = (dateString) => {
+  const d = new Date(dateString);
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+  if (isMobile) {
+    // Formato móvil: 26/9/2025 (sin ceros a la izquierda, sin hora)
+    const day = d.getDate();             // 1..31
+    const month = d.getMonth() + 1;      // 1..12
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  // Escritorio: mantiene el formato anterior con fecha y hora
+  return d.toLocaleDateString("es-AR", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+};
 
             if (loading) {
                 return (
