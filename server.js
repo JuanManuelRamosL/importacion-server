@@ -20,7 +20,7 @@ app.use(cors({
 }));
 
 app.use(
-  "/calculadora",
+  "/",
   express.static(path.join(__dirname, "public"))
 );
 
